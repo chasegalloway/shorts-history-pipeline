@@ -4,6 +4,13 @@ Fully automated YouTube Shorts pipeline: topic queue → Claude-written script �
 Kokoro voiceover → Whisper word captions → archival images (Wikimedia Commons) →
 ffmpeg 9:16 render → YouTube API upload with scheduled publish.
 
+> **[Privacy Policy](PRIVACY.md)** · **[Terms of Service](TERMS.md)**
+>
+> This application uses **YouTube API Services** to upload videos to the
+> operator's own YouTube channel. Use of this tool is subject to the
+> [YouTube Terms of Service](https://www.youtube.com/t/terms) and the
+> [Google Privacy Policy](http://www.google.com/policies/privacy).
+
 ## Commands
 
 ```powershell
