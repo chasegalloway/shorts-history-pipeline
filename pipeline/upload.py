@@ -16,14 +16,22 @@ from .common import ROOT, get_logger
 
 log = get_logger("upload")
 
-SCOPES = [
-    "https://www.googleapis.com/auth/youtube.upload",
-    "https://www.googleapis.com/auth/yt-analytics.readonly",
-]
+UPLOAD_SCOPE = "https://www.googleapis.com/auth/youtube.upload"
+ANALYTICS_SCOPE = "https://www.googleapis.com/auth/yt-analytics.readonly"
+SCOPES = [UPLOAD_SCOPE, ANALYTICS_SCOPE]
 SECRETS = ROOT / "secrets"
 
 
-def get_credentials():
+class MissingScopeError(Exception):
+    """Cached token lacks a required scope; interactive re-auth needed."""
+
+
+def get_credentials(require: str = UPLOAD_SCOPE, allow_flow: bool = True):
+    """Load cached credentials WITH THEIR OWN granted scopes (never force new
+    scopes onto an old token — Google rejects the refresh with invalid_scope,
+    which would break uploads too). If the required scope is missing, either
+    run the interactive consent flow (allow_flow) or raise MissingScopeError
+    so unattended callers can degrade gracefully."""
     from google.auth.transport.requests import Request
     from google.oauth2.credentials import Credentials
     from google_auth_oauthlib.flow import InstalledAppFlow
@@ -32,18 +40,21 @@ def get_credentials():
     client_file = SECRETS / "client_secret.json"
     creds = None
     if token_file.exists():
-        creds = Credentials.from_authorized_user_file(str(token_file), SCOPES)
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            if not client_file.exists():
-                raise FileNotFoundError(
-                    f"Missing {client_file}. Create OAuth desktop credentials in the "
-                    "Google Cloud console and save them there."
-                )
-            flow = InstalledAppFlow.from_client_secrets_file(str(client_file), SCOPES)
-            creds = flow.run_local_server(port=0)
+        creds = Credentials.from_authorized_user_file(str(token_file))
+    granted = set(creds.scopes or []) if creds else set()
+    if creds is None or require not in granted:
+        if not allow_flow:
+            raise MissingScopeError(f"token lacks scope {require}; run reauth.py")
+        if not client_file.exists():
+            raise FileNotFoundError(
+                f"Missing {client_file}. Create OAuth desktop credentials in the "
+                "Google Cloud console and save them there."
+            )
+        flow = InstalledAppFlow.from_client_secrets_file(str(client_file), SCOPES)
+        creds = flow.run_local_server(port=0)
+        token_file.write_text(creds.to_json(), encoding="utf-8")
+    elif not creds.valid:
+        creds.refresh(Request())
         token_file.write_text(creds.to_json(), encoding="utf-8")
     return creds
 

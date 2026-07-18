@@ -20,9 +20,11 @@ EXPLORATION = 0.5  # fraction of weight that stays uniform
 def get_analytics_service():
     from googleapiclient.discovery import build
 
-    from .upload import get_credentials
+    from .upload import ANALYTICS_SCOPE, get_credentials
 
-    return build("youtubeAnalytics", "v2", credentials=get_credentials())
+    # never pop a browser from an unattended scheduled run
+    return build("youtubeAnalytics", "v2",
+                 credentials=get_credentials(require=ANALYTICS_SCOPE, allow_flow=False))
 
 
 def refresh_stats(con, cfg) -> int:

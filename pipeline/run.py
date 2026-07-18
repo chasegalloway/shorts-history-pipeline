@@ -84,6 +84,12 @@ def produce_one(con, cfg, dry_run: bool, weights: dict | None = None) -> bool:
             "created_at": datetime.now(timezone.utc).isoformat(),
         }
 
+        # persist record BEFORE upload: a failed upload stays resumable via upload_one.py
+        db.save_video(con, rec)
+        db.mark_topic(con, topic["id"], "used")
+        (workdir / "metadata.json").write_text(
+            json.dumps(rec | {"attributions": attributions}, indent=2), encoding="utf-8")
+
         if not dry_run and cfg["upload"]["enabled"]:
             taken = [r["publish_at"] for r in con.execute(
                 "SELECT publish_at FROM videos WHERE publish_at IS NOT NULL").fetchall()]
@@ -93,11 +99,9 @@ def produce_one(con, cfg, dry_run: bool, weights: dict | None = None) -> bool:
                           "tags": meta["tags"]}, slot, cfg)
             rec["upload_status"] = "uploaded"
             rec["publish_at"] = slot.astimezone(timezone.utc).isoformat()
-
-        db.save_video(con, rec)
-        db.mark_topic(con, topic["id"], "used")
-        (workdir / "metadata.json").write_text(
-            json.dumps(rec | {"attributions": attributions}, indent=2), encoding="utf-8")
+            db.save_video(con, rec)
+            (workdir / "metadata.json").write_text(
+                json.dumps(rec | {"attributions": attributions}, indent=2), encoding="utf-8")
         log.info("=== Done: %s (%s) ===", video_id, rec["upload_status"])
         return True
     except Exception:
