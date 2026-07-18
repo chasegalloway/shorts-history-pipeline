@@ -1,4 +1,6 @@
 """Word-level captions: faster-whisper timestamps -> burned-in ASS subtitles."""
+import difflib
+import re
 from pathlib import Path
 
 from .common import get_logger
@@ -44,6 +46,37 @@ def transcribe_words(wav: Path, cfg: dict) -> list[dict]:
         for word in seg.words or []:
             words.append({"text": word.word.strip(), "start": word.start, "end": word.end})
     log.info("Transcribed %d words from %s", len(words), wav.name)
+    return words
+
+
+def correct_words(words: list[dict], display_text: str) -> list[dict]:
+    """Replace whisper's transcribed spellings with the script's written form.
+
+    Whisper hears the spoken (phonetic) text, so heteronym respellings and
+    garbled proper nouns would otherwise leak into captions. Aligning the
+    transcript to the display script keeps whisper's timing but the script's
+    spelling wherever the two runs line up.
+    """
+    script_tokens = display_text.split()
+
+    def norm(w: str) -> str:
+        return re.sub(r"[^a-z0-9']", "", w.lower())
+
+    sm = difflib.SequenceMatcher(
+        a=[norm(w["text"]) for w in words],
+        b=[norm(t) for t in script_tokens],
+        autojunk=False,
+    )
+    fixed = 0
+    for op, i1, i2, j1, j2 in sm.get_opcodes():
+        if op in ("equal", "replace") and (i2 - i1) == (j2 - j1):
+            for k in range(i2 - i1):
+                token = script_tokens[j1 + k]
+                if words[i1 + k]["text"] != token:
+                    fixed += 1
+                words[i1 + k]["text"] = token
+    if fixed:
+        log.info("Corrected %d caption words to script spelling", fixed)
     return words
 
 

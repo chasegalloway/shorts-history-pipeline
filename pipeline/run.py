@@ -46,10 +46,15 @@ def produce_one(con, cfg, dry_run: bool, weights: dict | None = None) -> bool:
             hook_weights=weights.get("hook"),
         )
 
+        # display form goes to captions/records; phonetic respellings go to TTS
+        display_script, spoken_script = script_gen.split_script(meta["script"])
+        meta["script"] = display_script
+
         voice_wav = workdir / "voice.wav"
-        tts.synthesize(meta["script"], voice_wav, cfg)
+        tts.synthesize(spoken_script, voice_wav, cfg)
 
         words = captions.transcribe_words(voice_wav, cfg)
+        words = captions.correct_words(words, display_script)
         ass_file = captions.build_ass(words, workdir / "captions.ass", cfg)
 
         seed_terms = json.loads(topic["search_terms"])

@@ -7,6 +7,7 @@ Anti-templating safeguards (YouTube "inauthentic content" policy):
 """
 import json
 import random
+import re
 import shutil
 import subprocess
 import time
@@ -37,6 +38,7 @@ HARD REQUIREMENTS:
 - STRICT factual accuracy. Only documented facts. Never invent quotes, names, numbers, or details. If a detail is uncertain, omit it or hedge ("reportedly").
 - Structure: hook (first 2 sentences must create an open question), escalating tension, payoff/resolution, then ONE final line that invites reflection or comment — vary its wording, never "like and subscribe".
 - Plain spoken prose only: no headings, emojis, stage directions, or camera notes. Write numbers as words where natural for speech.
+- PRONUNCIATION MARKUP: for any word a text-to-speech engine is likely to mispronounce — heteronyms (lead the metal, wind a clock, tear, bow, wound, dove, row, bass, close, minute meaning tiny, desert, live) and tricky proper nouns (Worcester, Vajont, Kholat) — write the normal spelling followed by a phonetic respelling in square brackets: "lead[led] poisoning", "took a bow[bau]", "Vajont[vye-ONT] Dam". The bracket text is ONLY what gets spoken; the normal spelling is displayed. Use this only where mispronunciation is genuinely likely.
 - Do not structurally or verbally resemble these recent videos: {recent_titles}
 
 Also produce YouTube metadata:
@@ -100,6 +102,16 @@ def generate(topic: dict, recent_titles: list[str], recent_hooks: list[str], cfg
         raise ValueError(f"script too long ({words} words), would exceed 60s")
     data["hook_type"] = hook
     return data
+
+
+HETERONYM_RE = re.compile(r"([\w'’-]+)\[([^\]]+)\]")
+
+
+def split_script(script: str) -> tuple[str, str]:
+    """'lead[led] pipes' -> display 'lead pipes', spoken 'led pipes'."""
+    display = HETERONYM_RE.sub(r"\1", script)
+    spoken = HETERONYM_RE.sub(r"\2", script)
+    return display, spoken
 
 
 def _parse_json(text: str) -> dict:
