@@ -43,6 +43,6 @@ upload:
   enabled: true
   privacy: "private"        # stays private-locked until API audit passes anyway
   category_id: "27"         # Education
-  publish_times: ["11:00", "14:30", "18:00"]   # local time, used for publishAt scheduling
+  publish_times: ["02:00", "05:30", "11:00", "14:30", "18:00"]   # local time, used for publishAt scheduling
   made_for_kids: false
   paid_promotion: false   # set true for videos using paid sound-campaign tracks
