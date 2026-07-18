@@ -17,7 +17,7 @@ from .common import get_logger
 log = get_logger("script_gen")
 
 HOOK_ARCHETYPES = {
-    "cold_open_moment": "Open mid-scene at the most dramatic second of the story, then rewind to explain.",
+    "cold_open_moment": "Open mid-scene at the most dramatic second of the story, then rewind to explain. The scene must be instantly graspable: name who/where/what is at stake within the first sentence — never unexplained action by anonymous people.",
     "countdown": "Open with a time-stamp countdown to catastrophe (e.g. 'At 9:04 AM, the crew had 41 seconds left...').",
     "nobody_noticed": "Open with the tiny overlooked detail or mistake that caused everything ('No one noticed the...').",
     "survivor_pov": "Open from the point of view of a real named survivor or witness (only documented people).",
@@ -25,12 +25,20 @@ HOOK_ARCHETYPES = {
     "artifact_hook": "Open with a physical object that still exists today and work backward to its story.",
 }
 
+# Retention data (2026-07): concrete, instantly-graspable openings dramatically
+# outperform disorienting ones. This rule applies to EVERY archetype.
+HOOK_RULE = ("The first sentence must contain something a viewer can picture and care about "
+             "within two seconds: a specific object, a named person, a place, or a number with "
+             "stakes. Never open with unattributed action, unnamed people, or scene-setting "
+             "that only makes sense in hindsight.")
+
 PROMPT_TEMPLATE = """You are the writer for a dark-history documentary YouTube Shorts channel. Write one script.
 
 TOPIC: {title}
 ANGLE: {angle}
 
 HOOK ARCHETYPE (must follow): {hook_name} — {hook_desc}
+HOOK RULE (non-negotiable): {hook_rule}
 
 HARD REQUIREMENTS:
 - {words_min}-{words_max} words of spoken narration (about 55 seconds). Count carefully.
@@ -67,6 +75,7 @@ def generate(topic: dict, recent_titles: list[str], recent_hooks: list[str], cfg
         angle=topic["angle"],
         hook_name=hook,
         hook_desc=HOOK_ARCHETYPES[hook],
+        hook_rule=HOOK_RULE,
         words_min=cfg["script"]["words_min"],
         words_max=cfg["script"]["words_max"],
         recent_titles="; ".join(recent_titles) or "(none yet)",
