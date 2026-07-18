@@ -1,0 +1,7 @@
+.venv/
+output/
+secrets/
+channel.db
+pipeline.log
+assets/music/
+__pycache__/

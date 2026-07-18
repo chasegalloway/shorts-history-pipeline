@@ -1,0 +1,48 @@
+channel:
+  niche: "dark history & disasters"
+  timezone: "America/New_York"
+
+paths:
+  ffmpeg: "C:/Users/chase/AppData/Local/Microsoft/WinGet/Packages/Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe/ffmpeg-8.1.2-full_build/bin/ffmpeg.exe"
+  ffprobe: "C:/Users/chase/AppData/Local/Microsoft/WinGet/Packages/Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe/ffmpeg-8.1.2-full_build/bin/ffprobe.exe"
+  output: "output"
+  music: "assets/music"
+  db: "channel.db"
+
+script:
+  model: "sonnet"          # claude CLI model for script generation
+  words_min: 120
+  words_max: 145
+
+tts:
+  engine: "kokoro"          # kokoro | edge
+  voice: "am_michael"       # kokoro voice id
+  edge_voice: "en-US-AndrewNeural"
+  speed: 1.05
+
+captions:
+  font: "Arial Black"
+  font_size: 88             # at 1080x1920 playres
+  max_words_per_chunk: 3
+
+video:
+  width: 1080
+  height: 1920
+  fps: 30
+  max_seconds: 58
+  images_min: 5
+  images_target: 10
+  music_volume: 0.35        # pre-duck music level (0-1)
+
+whisper:
+  model: "small"            # tiny | base | small
+  device: "cpu"
+  compute_type: "int8"
+
+upload:
+  enabled: true
+  privacy: "private"        # stays private-locked until API audit passes anyway
+  category_id: "27"         # Education
+  publish_times: ["11:00", "14:30", "18:00"]   # local time, used for publishAt scheduling
+  made_for_kids: false
+  paid_promotion: false   # set true for videos using paid sound-campaign tracks
