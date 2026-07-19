@@ -100,7 +100,7 @@ def upload(video_file: Path, meta: dict, publish_at: datetime, cfg: dict) -> str
             "privacyStatus": cfg["upload"]["privacy"],
             "publishAt": publish_at.astimezone(timezone.utc).isoformat(),
             "selfDeclaredMadeForKids": cfg["upload"]["made_for_kids"],
-            "containsSyntheticMedia": True,
+            "containsSyntheticMedia": bool(cfg["upload"].get("synthetic_media_disclosure", False)),
         },
         "paidProductPlacementDetails": {
             "hasPaidProductPlacement": bool(cfg["upload"].get("paid_promotion", False)),

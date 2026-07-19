@@ -45,4 +45,5 @@ upload:
   category_id: "27"         # Education
   publish_times: ["00:00", "02:00", "04:00", "06:00", "19:00"]   # night-weighted (EU/Asia active) + 1 US control
   made_for_kids: false
-  paid_promotion: false   # set true for videos using paid sound-campaign tracks
+  paid_promotion: false            # set true for videos using paid sound-campaign tracks
+  synthetic_media_disclosure: false # real archival photos + generic AI narration don't meet YT's disclosure criteria
