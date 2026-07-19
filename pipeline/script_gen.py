@@ -41,7 +41,7 @@ HOOK ARCHETYPE (must follow): {hook_name} — {hook_desc}
 HOOK RULE (non-negotiable): {hook_rule}
 
 HARD REQUIREMENTS:
-- {words_min}-{words_max} words of spoken narration (about 55 seconds). Count carefully.
+- {words_min}-{words_max} words of spoken narration (about 65 seconds). Count carefully.
 - Documentary tone: vivid, concrete, restrained. No hype words, no "insane/crazy/mind-blowing".
 - STRICT factual accuracy. Only documented facts. Never invent quotes, names, numbers, or details. If a detail is uncertain, omit it or hedge ("reportedly").
 - Structure: hook (first 2 sentences must create an open question), escalating tension, payoff/resolution, then ONE final line that invites reflection or comment — vary its wording, never "like and subscribe".
@@ -107,8 +107,8 @@ def generate(topic: dict, recent_titles: list[str], recent_hooks: list[str], cfg
             raise ValueError(f"script JSON missing key {key!r}: {proc.stdout[:300]}")
     words = len(data["script"].split())
     log.info("Script: %d words, title=%r", words, data["title"])
-    if words > cfg["script"]["words_max"] + 30:
-        raise ValueError(f"script too long ({words} words), would exceed 60s")
+    if words > cfg["script"]["words_max"] + 40:
+        raise ValueError(f"script too long ({words} words), would run well over target")
     data["hook_type"] = hook
     return data
 

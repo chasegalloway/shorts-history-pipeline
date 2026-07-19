@@ -11,8 +11,8 @@ paths:
 
 script:
   model: "sonnet"          # claude CLI model for script generation
-  words_min: 120
-  words_max: 145
+  words_min: 170          # ~65-70s narration; floor keeps every video >60s for TikTok Creator Rewards
+  words_max: 190
 
 tts:
   engine: "kokoro"          # kokoro | edge
@@ -29,7 +29,7 @@ video:
   width: 1080
   height: 1920
   fps: 30
-  max_seconds: 58
+  max_seconds: 90         # informational warn threshold; target ~65s, YT Shorts cap is 180s
   images_min: 5
   images_target: 10
   music_volume: 0.35        # pre-duck music level (0-1)
