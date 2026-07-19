@@ -15,11 +15,29 @@ from .common import ROOT, get_logger, load_config, out_dir
 
 log = get_logger("run")
 
-HASHTAGS = "#shorts #history #darkhistory #truestory #documentary"
+# Evergreen tags on every video; topic-specific ones are added per-video.
+EVERGREEN_HASHTAGS = ["#shorts", "#history", "#darkhistory"]
 
 
 def slugify(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:40]
+
+
+def build_hashtags(tags: list[str], limit: int = 6) -> str:
+    """Evergreen + topic-specific hashtags from the video's own tags.
+    YouTube shows the first 3 above the title, so evergreen lead. Multi-word
+    tags become camel-less single tokens ('coal mining' -> #coalmining)."""
+    seen = {h.lower() for h in EVERGREEN_HASHTAGS}
+    out = list(EVERGREEN_HASHTAGS)
+    for t in tags:
+        token = re.sub(r"[^a-z0-9]", "", t.lower())
+        tag = f"#{token}"
+        if token and 2 < len(token) <= 24 and tag not in seen:
+            out.append(tag)
+            seen.add(tag)
+        if len(out) >= limit:
+            break
+    return " ".join(out)
 
 
 def title_filename(title: str) -> str:
@@ -64,7 +82,7 @@ def produce_one(con, cfg, dry_run: bool, weights: dict | None = None) -> bool:
         out_mp4 = workdir / f"{title_filename(meta['title'])}.mp4"
         duration = assemble.assemble(images, voice_wav, ass_file, out_mp4, cfg)
 
-        description = meta["description"].strip() + "\n\n" + HASHTAGS
+        description = meta["description"].strip() + "\n\n" + build_hashtags(meta["tags"])
         if attributions:
             description += "\n\nImage credits:\n" + "\n".join(attributions[:10])
 
