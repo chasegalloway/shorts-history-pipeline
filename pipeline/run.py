@@ -10,7 +10,8 @@ import json
 import re
 from datetime import datetime, timezone
 
-from . import analytics, assemble, captions, db, script_gen, tiktok, tts, upload, visuals
+from . import (analytics, assemble, captions, db, script_gen, tiktok, tiktok_browser,
+               tts, upload, visuals)
 from .common import ROOT, get_logger, load_config, out_dir
 
 log = get_logger("run")
@@ -44,6 +45,19 @@ def title_filename(title: str) -> str:
     """Catchy YT title as a Windows-safe filename (Studio pre-fills title from it)."""
     name = "".join(c for c in title if c not in '<>:"/\\|?*').strip().rstrip(".")
     return (name or "untitled")[:120]
+
+
+def cross_post_tiktok(video_file, caption: str, publish_at, cfg: dict) -> str:
+    """Send a finished video to TikTok via the configured method.
+
+    'browser' drives the logged-in TikTok Studio session and can schedule the post
+    for the same moment as the YouTube slot; 'api' posts immediately and stays
+    SELF_ONLY until the app passes audit."""
+    tc = cfg["tiktok"]
+    if tc.get("method", "browser") == "api":
+        return tiktok.post(video_file, caption, cfg)
+    when = publish_at if tc.get("match_youtube_schedule", True) else None
+    return tiktok_browser.post(video_file, caption, when, cfg)
 
 
 def produce_one(con, cfg, dry_run: bool, weights: dict | None = None, topic=None) -> bool:
@@ -112,6 +126,7 @@ def produce_one(con, cfg, dry_run: bool, weights: dict | None = None, topic=None
         (workdir / "metadata.json").write_text(
             json.dumps(rec | {"attributions": attributions}, indent=2), encoding="utf-8")
 
+        slot = None
         if not dry_run and cfg["upload"]["enabled"]:
             taken = [r["publish_at"] for r in con.execute(
                 "SELECT publish_at FROM videos WHERE publish_at IS NOT NULL").fetchall()]
@@ -126,10 +141,11 @@ def produce_one(con, cfg, dry_run: bool, weights: dict | None = None, topic=None
                 json.dumps(rec | {"attributions": attributions}, indent=2), encoding="utf-8")
 
         # TikTok cross-post: isolated so a TikTok failure never fails a good YT post.
+        # Scheduled to `slot` so it lands with the YouTube upload rather than days early.
         if not dry_run and cfg.get("tiktok", {}).get("enabled"):
             try:
                 caption = meta["title"] + "\n\n" + build_hashtags(meta["tags"])
-                rec["tiktok_id"] = tiktok.post(out_mp4, caption, cfg)
+                rec["tiktok_id"] = cross_post_tiktok(out_mp4, caption, slot, cfg)
                 rec["tiktok_status"] = "posted"
             except Exception:
                 log.exception("TikTok post failed for %s", video_id)

@@ -5,3 +5,4 @@ channel.db
 pipeline.log
 assets/music/
 __pycache__/
+browser-profile/

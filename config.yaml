@@ -43,14 +43,19 @@ upload:
   enabled: true
   privacy: "private"        # stays private-locked until API audit passes anyway
   category_id: "27"         # Education
-  publish_times: ["00:00", "02:00", "04:00", "06:00", "20:00", "22:00"]   # all 6 at night (20:00-06:00 ET, off-peak US / EU-Asia active)
+  publish_times: ["10:00", "13:00", "16:00", "20:00", "23:00", "02:00"]   # 3 daytime (10:00-16:00 ET) + 3 overnight (20:00-02:00 ET)
   made_for_kids: false
   paid_promotion: false            # set true for videos using paid sound-campaign tracks
   synthetic_media_disclosure: false # real archival photos + generic AI narration don't meet YT's disclosure criteria
 
 tiktok:
-  enabled: false                    # parked — focusing on YT Shorts; flip true after TikTok app audit
-  privacy_level: "SELF_ONLY"        # forced private until the TikTok app passes audit; then PUBLIC_TO_EVERYONE
+  enabled: true
+  method: "browser"                 # browser (Studio web, real session) | api (tiktok.py, audit-locked to SELF_ONLY)
+  browser_profile: "browser-profile"  # persistent Edge profile holding the logged-in TikTok session
+  browser_channel: "msedge"
+  headless: false                   # TikTok blocks headless; runs visibly in the logged-in session
+  match_youtube_schedule: true      # schedule the TikTok post for the same time as the YT slot
+  privacy_level: "SELF_ONLY"        # api method only — forced private until the TikTok app passes audit
   disable_comment: false
   disable_duet: false
   disable_stitch: false
