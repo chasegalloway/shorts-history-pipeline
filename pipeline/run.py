@@ -10,7 +10,7 @@ import json
 import re
 from datetime import datetime, timezone
 
-from . import analytics, assemble, captions, db, script_gen, tts, upload, visuals
+from . import analytics, assemble, captions, db, script_gen, tiktok, tts, upload, visuals
 from .common import ROOT, get_logger, load_config, out_dir
 
 log = get_logger("run")
@@ -46,9 +46,10 @@ def title_filename(title: str) -> str:
     return (name or "untitled")[:120]
 
 
-def produce_one(con, cfg, dry_run: bool, weights: dict | None = None) -> bool:
+def produce_one(con, cfg, dry_run: bool, weights: dict | None = None, topic=None) -> bool:
     weights = weights or {}
-    topic = db.next_topic(con, weights.get("tier"))
+    if topic is None:
+        topic = db.next_topic(con, weights.get("tier"))
     if topic is None:
         log.error("Topic queue is empty — add more topics to data/topics_seed.json and --seed")
         return False
@@ -100,6 +101,9 @@ def produce_one(con, cfg, dry_run: bool, weights: dict | None = None) -> bool:
             "youtube_id": None,
             "publish_at": None,
             "created_at": datetime.now(timezone.utc).isoformat(),
+            "tiktok_status": "disabled" if not cfg.get("tiktok", {}).get("enabled") else (
+                "dry_run" if dry_run else "pending"),
+            "tiktok_id": None,
         }
 
         # persist record BEFORE upload: a failed upload stays resumable via upload_one.py
@@ -120,7 +124,21 @@ def produce_one(con, cfg, dry_run: bool, weights: dict | None = None) -> bool:
             db.save_video(con, rec)
             (workdir / "metadata.json").write_text(
                 json.dumps(rec | {"attributions": attributions}, indent=2), encoding="utf-8")
-        log.info("=== Done: %s (%s) ===", video_id, rec["upload_status"])
+
+        # TikTok cross-post: isolated so a TikTok failure never fails a good YT post.
+        if not dry_run and cfg.get("tiktok", {}).get("enabled"):
+            try:
+                caption = meta["title"] + "\n\n" + build_hashtags(meta["tags"])
+                rec["tiktok_id"] = tiktok.post(out_mp4, caption, cfg)
+                rec["tiktok_status"] = "posted"
+            except Exception:
+                log.exception("TikTok post failed for %s", video_id)
+                rec["tiktok_status"] = "failed"
+            db.save_video(con, rec)
+            (workdir / "metadata.json").write_text(
+                json.dumps(rec | {"attributions": attributions}, indent=2), encoding="utf-8")
+        log.info("=== Done: %s (yt=%s tiktok=%s) ===",
+                 video_id, rec["upload_status"], rec["tiktok_status"])
         return True
     except Exception:
         log.exception("Production failed for %s", video_id)

@@ -43,7 +43,15 @@ upload:
   enabled: true
   privacy: "private"        # stays private-locked until API audit passes anyway
   category_id: "27"         # Education
-  publish_times: ["00:00", "02:00", "04:00", "06:00", "19:00"]   # night-weighted (EU/Asia active) + 1 US control
+  publish_times: ["00:00", "02:00", "04:00", "06:00", "20:00", "22:00"]   # all 6 at night (20:00-06:00 ET, off-peak US / EU-Asia active)
   made_for_kids: false
   paid_promotion: false            # set true for videos using paid sound-campaign tracks
   synthetic_media_disclosure: false # real archival photos + generic AI narration don't meet YT's disclosure criteria
+
+tiktok:
+  enabled: false                    # parked — focusing on YT Shorts; flip true after TikTok app audit
+  privacy_level: "SELF_ONLY"        # forced private until the TikTok app passes audit; then PUBLIC_TO_EVERYONE
+  disable_comment: false
+  disable_duet: false
+  disable_stitch: false
+  disclose_commercial: false        # matches paid_promotion / synthetic-media stance

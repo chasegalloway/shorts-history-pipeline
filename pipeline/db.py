@@ -40,9 +40,17 @@ CREATE TABLE IF NOT EXISTS videos (
     upload_status TEXT NOT NULL DEFAULT 'pending',  -- pending | uploaded | failed | dry_run
     youtube_id TEXT,
     publish_at TEXT,
-    created_at TEXT NOT NULL
+    created_at TEXT NOT NULL,
+    tiktok_status TEXT NOT NULL DEFAULT 'pending',  -- pending | posted | failed | disabled
+    tiktok_id TEXT                                   -- TikTok publish_id
 );
 """
+
+# Columns added after the videos table shipped; applied idempotently on connect.
+MIGRATIONS = {
+    "tiktok_status": "TEXT NOT NULL DEFAULT 'pending'",
+    "tiktok_id": "TEXT",
+}
 
 
 def connect() -> sqlite3.Connection:
@@ -50,6 +58,13 @@ def connect() -> sqlite3.Connection:
     con = sqlite3.connect(ROOT / cfg["paths"]["db"])
     con.row_factory = sqlite3.Row
     con.executescript(SCHEMA)
+    # add any columns missing from an older videos table (CREATE IF NOT EXISTS
+    # won't alter an existing one)
+    existing = {r["name"] for r in con.execute("PRAGMA table_info(videos)")}
+    for col, decl in MIGRATIONS.items():
+        if col not in existing:
+            con.execute(f"ALTER TABLE videos ADD COLUMN {col} {decl}")
+    con.commit()
     return con
 
 
@@ -114,9 +129,11 @@ def save_video(con: sqlite3.Connection, rec: dict) -> None:
     con.execute(
         """INSERT OR REPLACE INTO videos
            (id, topic_id, hook_type, script, yt_title, yt_description, tags, file,
-            duration_s, upload_status, youtube_id, publish_at, created_at)
+            duration_s, upload_status, youtube_id, publish_at, created_at,
+            tiktok_status, tiktok_id)
            VALUES (:id,:topic_id,:hook_type,:script,:yt_title,:yt_description,:tags,:file,
-                   :duration_s,:upload_status,:youtube_id,:publish_at,:created_at)""",
-        rec,
+                   :duration_s,:upload_status,:youtube_id,:publish_at,:created_at,
+                   :tiktok_status,:tiktok_id)""",
+        {"tiktok_status": "pending", "tiktok_id": None, **rec},
     )
     con.commit()
